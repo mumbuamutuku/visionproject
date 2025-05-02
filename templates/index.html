@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Traffic Sign Recognition</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f8;
+            padding: 40px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #007BFF;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        form {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+        }
+
+        button {
+            background: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .images {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        .image-section {
+            width: 48%;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .image-section img {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .single-image {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .single-image img {
+            width: 80%;
+            max-width: 500px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .prediction {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: green;
+            text-align: center;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+        }
+
+        .guide {
+            background: #e9f7ff;
+            border-left: 5px solid #007BFF;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .feedback {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .feedback button {
+            font-size: 1.5em;
+            margin: 0 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        h3 {
+            color: #007BFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Traffic Sign Recognition</h1>
+
+        <div class="guide">
+            <p><strong>Instructions:</strong></p>
+            <ul>
+                <li>Upload a clear image of a traffic sign.</li>
+                <li>The system will identify and classify the sign using our AI model.</li>
+                <li>Supported signs include speed limits, stop, yield, roundabout, etc.</li>
+            </ul>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="image" accept="image/*" required>
+            <br>
+            <button type="submit">Upload & Predict</button>
+        </form>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+
+        {% if prediction %}
+            <div class="images">
+                <div class="image-section">
+                    <h3>Original Image</h3>
+                    <img src="data:image/jpeg;base64,{{ original_image }}" alt="Original Image">
+                </div>
+                <div class="image-section">
+                    <h3>Processed Image</h3>
+                    <img src="data:image/jpeg;base64,{{ processed_image }}" alt="Processed Image">
+                    <br />
+                    <h3>Masked Image</h3>
+                    <img src="data:image/jpeg;base64,{{ masked_image }}" alt="Masked Image">
+                </div>
+            </div>
+
+            <div class="single-image">
+                <h3>Prediction Confidence</h3>
+                <img src="data:image/png;base64,{{ chart }}" alt="Confidence Chart">
+            </div>
+
+            <p class="prediction">
+                Predicted Traffic Sign: <strong>{{ prediction }}</strong><br>
+                Confidence Score: <strong>{{ confidence | round(2) }}%</strong>
+            </p>
+
+            <div class="feedback">
+                <h3>Was this prediction correct?</h3>
+                <form action="/feedback" method="POST">
+                    <input type="hidden" name="prediction" value="{{ prediction }}">
+                    <input type="hidden" name="confidence" value="{{ confidence }}">
+                    <input type="hidden" name="filename" value="{{ filename }}">
+                    <button type="submit" name="feedback" value="yes">👍</button>
+                    <button type="submit" name="feedback" value="no">👎</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
