@@ -12,7 +12,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: auto;
             background: white;
             padding: 30px;
@@ -66,6 +66,7 @@
             max-width: 100%;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
         }
 
         .single-image {
@@ -116,17 +117,127 @@
         h3 {
             color: #007BFF;
         }
+
+        .classification-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .classification-section h2 {
+            color: #007BFF;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .classification-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .classification-item {
+            text-align: center;
+        }
+
+        .classification-item h4 {
+            color: #555;
+            margin: 10px 0;
+        }
+
+        .classification-info {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .info-item {
+            background: #f0f7ff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .info-item span {
+            font-weight: bold;
+            color: #007BFF;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            margin: 0 5px;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tab-button.active {
+            background: #007BFF;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
+    <script>
+        function showTab(tabId) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Deactivate all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab and activate button
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+        
+        window.onload = function() {
+            // Set default tab
+            const firstTab = document.querySelector('.tab-content');
+            if (firstTab) {
+                firstTab.classList.add('active');
+                document.querySelector('.tab-button').classList.add('active');
+            }
+        };
+    </script>
 </head>
 <body>
     <div class="container">
-        <h1>Traffic Sign Recognition</h1>
+        <h1>Traffic Sign Recognition & Image Analysis</h1>
 
         <div class="guide">
             <p><strong>Instructions:</strong></p>
             <ul>
                 <li>Upload a clear image of a traffic sign.</li>
                 <li>The system will identify and classify the sign using our AI model.</li>
+                <li>Advanced image analysis will also be performed on your image.</li>
                 <li>Supported signs include speed limits, stop, yield, roundabout, etc.</li>
             </ul>
         </div>
@@ -134,7 +245,7 @@
         <form method="POST" enctype="multipart/form-data">
             <input type="file" name="image" accept="image/*" required>
             <br>
-            <button type="submit">Upload & Predict</button>
+            <button type="submit">Upload & Analyze</button>
         </form>
 
         {% if error %}
@@ -142,39 +253,118 @@
         {% endif %}
 
         {% if prediction %}
-            <div class="images">
-                <div class="image-section">
-                    <h3>Original Image</h3>
-                    <img src="data:image/jpeg;base64,{{ original_image }}" alt="Original Image">
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button" onclick="showTab('traffic-sign-tab')">Traffic Sign Recognition</button>
+                    <button class="tab-button" onclick="showTab('image-analysis-tab')">Image Analysis</button>
                 </div>
-                <div class="image-section">
-                    <h3>Processed Image</h3>
-                    <img src="data:image/jpeg;base64,{{ processed_image }}" alt="Processed Image">
-                    <br />
-                    <h3>Masked Image</h3>
-                    <img src="data:image/jpeg;base64,{{ masked_image }}" alt="Masked Image">
+                
+                <div id="traffic-sign-tab" class="tab-content">
+                    <div class="images">
+                        <div class="image-section">
+                            <h3>Original Image</h3>
+                            <img src="data:image/jpeg;base64,{{ original_image }}" alt="Original Image">
+                        </div>
+                        <div class="image-section">
+                            <h3>Processed Image</h3>
+                            <img src="data:image/jpeg;base64,{{ processed_image }}" alt="Processed Image">
+                            <h3>Masked Image</h3>
+                            <img src="data:image/jpeg;base64,{{ masked_image }}" alt="Masked Image">
+                        </div>
+                    </div>
+
+                    <div class="single-image">
+                        <h3>Prediction Confidence</h3>
+                        <img src="data:image/png;base64,{{ chart }}" alt="Confidence Chart">
+                    </div>
+
+                    <p class="prediction">
+                        Predicted Traffic Sign: <strong>{{ prediction }}</strong><br>
+                        Confidence Score: <strong>{{ confidence | round(2) }}%</strong>
+                    </p>
+
+                    <div class="feedback">
+                        <h3>Was this prediction correct?</h3>
+                        <form action="/feedback" method="POST">
+                            <input type="hidden" name="prediction" value="{{ prediction }}">
+                            <input type="hidden" name="confidence" value="{{ confidence }}">
+                            <button type="submit" name="feedback" value="yes">👍</button>
+                            <button type="submit" name="feedback" value="no">👎</button>
+                        </form>
+                    </div>
                 </div>
-            </div>
-
-            <div class="single-image">
-                <h3>Prediction Confidence</h3>
-                <img src="data:image/png;base64,{{ chart }}" alt="Confidence Chart">
-            </div>
-
-            <p class="prediction">
-                Predicted Traffic Sign: <strong>{{ prediction }}</strong><br>
-                Confidence Score: <strong>{{ confidence | round(2) }}%</strong>
-            </p>
-
-            <div class="feedback">
-                <h3>Was this prediction correct?</h3>
-                <form action="/feedback" method="POST">
-                    <input type="hidden" name="prediction" value="{{ prediction }}">
-                    <input type="hidden" name="confidence" value="{{ confidence }}">
-                    <input type="hidden" name="filename" value="{{ filename }}">
-                    <button type="submit" name="feedback" value="yes">👍</button>
-                    <button type="submit" name="feedback" value="no">👎</button>
-                </form>
+                
+                <div id="image-analysis-tab" class="tab-content">
+                    {% if classification %}
+                        <div class="classification-section">
+                            <h2>Image Analysis Results</h2>
+                            
+                            <div class="classification-info">
+                                <h3>Image Properties</h3>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <p><span>Height:</span> {{ classification.image_info.shape.height }} px</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Width:</span> {{ classification.image_info.shape.width }} px</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Channels:</span> {{ classification.image_info.shape.channels }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="classification-info">
+                                <h3>Color Statistics</h3>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <p><span>Mean Red:</span> {{ classification.image_info.mean_values.red | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Mean Green:</span> {{ classification.image_info.mean_values.green | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Mean Blue:</span> {{ classification.image_info.mean_values.blue | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Mean Gray:</span> {{ classification.image_info.mean_values.gray | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Std Dev Red:</span> {{ classification.image_info.std_dev_values.red | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Std Dev Green:</span> {{ classification.image_info.std_dev_values.green | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Std Dev Blue:</span> {{ classification.image_info.std_dev_values.blue | round(2) }}</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <p><span>Std Dev Gray:</span> {{ classification.image_info.std_dev_values.gray | round(2) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="classification-grid">
+                                <div class="classification-item">
+                                    <h4>Edge Detection</h4>
+                                    <img src="data:image/jpeg;base64,{{ classification.image_info.edge_detection }}" alt="Edge Detection">
+                                </div>
+                                <div class="classification-item">
+                                    <h4>Hough Lines</h4>
+                                    <img src="data:image/jpeg;base64,{{ classification.image_info.hough_lines }}" alt="Hough Lines">
+                                </div>
+                                <div class="classification-item">
+                                    <h4>Harris Corners</h4>
+                                    <img src="data:image/jpeg;base64,{{ classification.image_info.harris_corners }}" alt="Harris Corners">
+                                </div>
+                                <div class="classification-item">
+                                    <h4>Contours</h4>
+                                    <img src="data:image/jpeg;base64,{{ classification.image_info.contours }}" alt="Contours">
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
     </div>
